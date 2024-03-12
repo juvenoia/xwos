@@ -9,7 +9,6 @@ void main()
   irq_install();
   timer_install();
   kinit(); // 30406539
-  print_num(end);
   print_str("my first kernel.. first!!!!!!\n");
   /*
    * what caused bug here:
