@@ -3,19 +3,19 @@
 /* Defines an IDT entry */
 struct idt_entry
 {
-    unsigned short base_lo;
-    unsigned short sel;        /* Our kernel segment goes here! */
-    unsigned char always0;     /* This will ALWAYS be set to 0! */
-    unsigned char flags;       /* Set using the above table! */
-    unsigned short base_hi;
-    unsigned int base_3;
-    unsigned int zero;
+    uint16 base_lo;
+    uint16 sel;        /* Our kernel segment goes here! */
+    uint8 always0;     /* This will ALWAYS be set to 0! */
+    uint8 flags;       /* Set using the above table! */
+    uint16 base_hi;
+    uint32 base_3;
+    uint32 zero;
 } __attribute__((packed)) idt[256];
 
 struct idt_ptr
 {
-    unsigned short limit;
-    unsigned long long base;
+    uint16 limit;
+    uint64 base;
 } __attribute__((packed)) idtp;
 
 
@@ -32,7 +32,7 @@ extern void idt_load();
 
 /* Use this function to set an entry in the IDT. Alot simpler
 *  than twiddling with the GDT ;) */
-void idt_set_gate(unsigned char num, unsigned long long base, unsigned short sel, unsigned char flags)
+void idt_set_gate(uint8 num, uint64 base, uint16 sel, uint8 flags)
 {
   /* We'll leave you to try and code this function: take the
   *  argument 'base' and split it up into a high and low 16-bits,

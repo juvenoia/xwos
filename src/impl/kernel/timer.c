@@ -52,5 +52,5 @@ void timer_install()
   /* Installs 'timer_handler' to IRQ0 */
   timer_phase(100000);
   irq_install_handler(0, timer_handler);
-  sti();
+  //sti();
 }

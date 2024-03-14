@@ -93,7 +93,7 @@ void isrs_install()
 *  corresponds to each and every exception. We get the correct
 *  message by accessing like:
 *  exception_message[interrupt_number] */
-unsigned char *exception_messages[] =
+uint8 *exception_messages[] =
         {
                 "Division By Zero",
                 "Debug",
@@ -138,21 +138,13 @@ unsigned char *exception_messages[] =
 *  endless loop. All ISRs disable interrupts while they are being
 *  serviced as a 'locking' mechanism to prevent an IRQ from
 *  happening and messing up kernel data structures */
-unsigned long long pfadd;
 void fault_handler(struct regs *r)
 {
   if (r->int_no < 32) {
-    print_str(exception_messages[r->int_no]);
-    print_str(" Exception. System Halted!\n");
-//    if (r->int_no == 14) {
-//      __asm__ volatile ("mov %%cr2, %0" : "=r" (pfadd));
-//      print_num(pfadd);
-//    }
+    printk("%s Exception. System Halted!\n", exception_messages[r->int_no]);
     for (;;);
   } else {
-    print_str("exception number: ");
-    print_num(r->int_no);
-    print_str("unknown exception! halted..\n");
+    printk("exception number: %d, unknown exception! halted..\n", r->int_no);
     for (;;);
   }
   return;

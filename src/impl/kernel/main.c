@@ -2,20 +2,18 @@
 void main()
 {
   // we donot need gdt install in 64bit mode anymore, so we cleared it out here.
-  print_clear();
-  print_set_color(PRINT_COLOR_YELLOW, PRINT_COLOR_BLACK);
+  init_serial(); // todo: multi-hart printk
+  sti();
   idt_install();
   isrs_install();
-  irq_install();
+  irq_install(); // todo: 现在的trapframe是否完全？
   timer_install();
-  kinit(); // 30406539
-  print_str("my first kernel.. first!!!!!!\n");
-  /*
-   * what caused bug here:
-   * 1. you need to cli/sti when setting 8259
-   * 2. hlt do not ignore intr. but no eoi, why more signals?
-   * 3. still dk why it doesnt work when encountering a page-fault, the code does not get back! wtf?
-   * */
-  for (;;);
-    //print_str("my first kernel..\n");
+  kinit(); // todo: 一个简单的模型。如何绕过rom?
+  // todo: procinit 去查看 task struct的内容，以及如何进入ring3? 能否验证现在是不是ring3?
+  // todo: keyboard intr.
+  // todo: fs related. binit, iinit, fileinit, virtio_disk_init
+  // todo: last: userinit.
+  printk("my first kernel.. first!!!!!!\n");
+
+  for (int i = 0; ; i ++) ;
 }

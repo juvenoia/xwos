@@ -15,9 +15,9 @@ void *memset(void *dest, char val, size_t count)
   return dest;
 }
 
-unsigned short *memsetw(unsigned short *dest, unsigned short val, size_t count)
+uint16 *memsetw(uint16 *dest, uint16 val, size_t count)
 {
-  unsigned short *temp = (unsigned short *)dest;
+  uint16 *temp = (uint16 *)dest;
   for( ; count != 0; count--) *temp++ = val;
   return dest;
 }
@@ -29,14 +29,14 @@ size_t strlen(const char *str)
   return retval;
 }
 
-unsigned char inportb (unsigned short _port)
+uint8 inportb (uint16 _port)
 {
-  unsigned char rv;
+  uint8 rv;
   __asm__ __volatile__ ("inb %1, %0" : "=a" (rv) : "dN" (_port));
   return rv;
 }
 
-void outportb (unsigned short _port, unsigned char _data)
+void outportb (uint16 _port, uint8 _data)
 {
   __asm__ __volatile__ ("outb %1, %0" : : "dN" (_port), "a" (_data));
 }

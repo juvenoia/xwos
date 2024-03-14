@@ -39,21 +39,6 @@ setup_page_tables:
 	cmp ecx, 512 ; checks if the whole table is mapped
 	jne .loop
     ;;
-	mov eax, page_table_l21
-	or eax, 0b11
-	mov [page_table_l3 + 3 * 8], eax
-
-    mov ecx, 0
-.loop1:
-    mov eax, 0x200000 ; 2MiB
-    mul ecx
-    add eax, 0xc0000000
-    or eax, 0b10000011 ; present, writable, huge page
-    mov [page_table_l21 + ecx * 8], eax ; 1G
-
-    inc ecx ; increment counter
-    cmp ecx, 512 ; checks if the whole table is mapped
-    jne .loop1
 
 	ret
 ;page_table_l31, page_table_l21
@@ -146,10 +131,8 @@ page_table_l3:
 	resb 4096
 page_table_l2:
 	resb 4096 * 2
-page_table_l21:
-    resb 4096 * 2
 stack_bottom:
-	resb 4096 * 32
+	resb 4096 * 8
 stack_top:
 
 section .rodata
