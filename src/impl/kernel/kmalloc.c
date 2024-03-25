@@ -15,7 +15,7 @@ static uint64 PGROUNDUP(void *va) {
 
 //extern char end[];
 const uint64 end = 0x01000000; //256M
-const uint64 MAXVA = end + PGSIZE * 8196; // 128 MB.
+const uint64 MAXVA = end + PGSIZE * 256; // 128 MB.
 
 struct run {
     struct run *next;

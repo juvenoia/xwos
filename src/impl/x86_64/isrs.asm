@@ -269,7 +269,7 @@ isr_common_stub:
     push rcx
     push rdx
     push rbx
-    push rbp
+    push rbp ; 0x101d50
     push rsi
     push rdi
 
@@ -290,7 +290,7 @@ isr_common_stub:
 
     add rsp, 16
     ; add qword [rsp], 1 ; rip added 1, i.e. pc, to call it back..
-    sti
+    ; sti
     iretq
 
 global irq0
@@ -449,6 +449,7 @@ irq_common_stub:
     pop rdx
     pop rcx
     pop rax
+    ; we need rax; r11 for our shit.
     add rsp, 16 ; two qwords!
 
     iretq

@@ -41,12 +41,18 @@ void outportb (uint16 _port, uint8 _data)
   __asm__ __volatile__ ("outb %1, %0" : : "dN" (_port), "a" (_data));
 }
 
-void cli()
+void cli() // close intr
 {
   __asm__ __volatile__ ("cli");
 }
 
-void sti()
+void sti() // start intr
 {
   __asm__ __volatile__ ("sti");
+}
+
+extern void jump_usermode();
+
+void usermode() {
+  jump_usermode();
 }
