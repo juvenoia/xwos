@@ -54,6 +54,8 @@ extern void timer_install();
 //
 
 /* KMALLOC.C */
+typedef uint64 pagetable_t;
+
 extern void kinit();
 extern void kfree(void *);
 extern void *kalloc();
@@ -64,4 +66,24 @@ extern void write_serial(char);
 
 /* PRINTK.C */
 extern void printk(char *fmt, ...);
+
+/* PROC.C */
+typedef struct {
+    uint64 rax, rbx, rcx, rdx, rsi, rdi, rbp, rsp;
+    uint64 r8, r9, r10, r11, r12, r13, r14, r15;
+    uint64 rip;
+} ctx_t;
+
+typedef struct {
+    int id;
+    ctx_t ctx;
+    pagetable_t *pgtbl, *kpgtbl;
+    uint64 *knlStk;
+}proc;
+
+extern proc task_struct[];
+
+/* USERMODE.C */
+extern void updateKernelStack(uint32);
+extern void jmpUsermode();
 #endif

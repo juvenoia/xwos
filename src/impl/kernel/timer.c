@@ -18,10 +18,10 @@ void timer_handler(struct regs *r)
 {
   /* Increment our 'tick count' */
   timer_ticks++;
-  uint64 rsp_v;
-  __asm__ __volatile__ ("movq %%rsp, %0" : "=r" (rsp_v));
-  printk("rsp: %p\n", rsp_v);
-  printk("this is a timer handler, which is from cpl3\n");
+  // uint64 rsp_v;
+  // __asm__ __volatile__ ("movq %%rsp, %0" : "=r" (rsp_v));
+  // printk("rsp: %p\n", rsp_v);
+  // printk("this is a timer handler, which is from cpl3\n");
   /* Every 18 clocks (approximately 1 second), we will
   *  display a message on the screen */
   if (timer_ticks % 18 == 0) {
