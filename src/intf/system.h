@@ -69,9 +69,8 @@ extern void printk(char *fmt, ...);
 
 /* PROC.C */
 typedef struct {
-    uint64 rax, rbx, rcx, rdx, rsi, rdi, rbp, rsp;
+    uint64 rax, rbx, rcx, rdx, rsi, rdi, rbp;
     uint64 r8, r9, r10, r11, r12, r13, r14, r15;
-    uint64 rip;
 } ctx_t;
 
 typedef struct {
@@ -81,9 +80,59 @@ typedef struct {
     uint64 *knlStk;
 }proc;
 
+#define NPROC 256 // currently only 256 tasks are allowed
 extern proc task_struct[];
 
 /* USERMODE.C */
 extern void updateKernelStack(uint32);
 extern void jmpUsermode();
+
+#define SYS_fork    1
+#define SYS_exit    2
+#define SYS_wait    3
+#define SYS_pipe    4
+#define SYS_read    5
+#define SYS_kill    6
+#define SYS_exec    7
+#define SYS_fstat   8
+#define SYS_chdir   9
+#define SYS_dup    10
+#define SYS_getpid 11
+#define SYS_sbrk   12
+#define SYS_sleep  13
+#define SYS_uptime 14
+#define SYS_open   15
+#define SYS_write  16
+#define SYS_mknod  17
+#define SYS_unlink 18
+#define SYS_link   19
+#define SYS_mkdir  20
+#define SYS_close  21
+#define SYS_putc   22
+
+//extern int fork(void);
+//extern int exit(int) __attribute__((noreturn));
+//extern int wait(int*);
+//extern int pipe(int*);
+//extern int write(int, const void*, int);
+//extern int read(int, void*, int);
+//extern int close(int);
+//extern int kill(int);
+//extern int exec(const char*, char**);
+//extern int open(const char*, int);
+//extern int mknod(const char*, short, short);
+//extern int unlink(const char*);
+//extern int fstat(int fd, struct stat*);
+//extern int link(const char*, const char*);
+//extern int mkdir(const char*);
+//extern int chdir(const char*);
+//extern int dup(int);
+//extern int getpid(void);
+//extern char* sbrk(int);
+//extern int sleep(int);
+//extern int uptime(void);
+extern int putc(char c);
+
+extern void uprintf(char *fmt, ...);
+
 #endif

@@ -1,15 +1,13 @@
 #include "system.h"
 
 void user_test() {
-  for (;;) {
-    printk("user test\n");
+  for (;; ) {
+    uprintf("i have done user-syscall stub.\n");
   }
 }
 
 
-void main()
-{
-  // we donot need gdt install in 64bit mode anymore, so we cleared it out here.
+void main() {
   init_serial(); // todo: multi-hart printk
   cli();
   idt_install();

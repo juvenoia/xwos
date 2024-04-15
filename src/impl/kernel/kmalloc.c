@@ -30,7 +30,7 @@ void kinit() {
   struct run *r;
   for (uint64 va = PGROUNDUP(end); va < MAXVA; va += PGSIZE)
     kfree(va); //32 M available memory for us. not too big now! memory management is annoying.
-  // alloc each task knlStk with its task_struct
+  // TODO: alloc each task knlStk with its task_struct
 }
 
 void kfree(void *va) {

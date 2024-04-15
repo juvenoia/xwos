@@ -40,6 +40,7 @@ extern void isr28();
 extern void isr29();
 extern void isr30();
 extern void isr31();
+extern void syscall();
 
 /* This is a very repetitive function... it's not hard, it's
 *  just annoying. As you can see, we set the first 32 entries
@@ -87,6 +88,7 @@ void isrs_install()
   idt_set_gate(29, (unsigned)isr29, 0x08, 0x8E);
   idt_set_gate(30, (unsigned)isr30, 0x08, 0x8E);
   idt_set_gate(31, (unsigned)isr31, 0x08, 0x8E);
+  idt_set_gate(128, (unsigned)syscall, 0x08, 0xEE);
 }
 
 /* This is a simple string array. It contains the message that
@@ -147,5 +149,4 @@ void fault_handler(struct regs *r)
     printk("exception number: %d, unknown exception! halted..\n", r->int_no);
     for (;;);
   }
-  return;
 }

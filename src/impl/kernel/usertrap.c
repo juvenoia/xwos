@@ -22,39 +22,8 @@
         SAVE_REG_TO_TASK_STRUCT(r15, id);
 
 void uwrite_serial(char a) {
-  // SYSCALL
-  // 64-bit syscall.
-  /*
-   * syscall loads CS from STAR 47:32, SS .store RIP in RCX(we need to store rcx)
-   * loads RIP from LSTAR.
-   * */
-  /*
-  TODO:
-  pseudo: save current registers in task_struct
-  rcx should be current + get rip, write rcx, sycall.
-  Kernel rsp is Set in TSS. you should need this, because each proc should have different kernel stack.
-  __asm__ __volatile__ ("syscall");
-  write_serial(a);
-  change rcx and r11. you do not change others, because syscalls are called only-once,
-  i.e intr are ignored!
-  __asm__ __volatile__ ("sysret");
-  restore registers.
-  */
-  uint32 cid = task_struct[0].id; // current working on debug, tss[0].knlStk should be current rsp/rbp.
-  INTR_SAVE_ALL_REGS_TO_TASK_STRUCT(cid); // you dont save rip here. it is meaning less.
-  uint64 *stk = task_struct[cid].knlStk;
-  //test mode
-  stk = task_struct[0].ctx.rsp;
-  updateKernelStack(stk);
-  //TODO: change LSTAR. get rip, mov lstar, syscall, then it should be where it works.
-  __asm__ __volatile__ ("syscall");
-  //TODO: privileged inst..
+  __asm__ ("ud2"); // this will cause a syscall. we will jmp to kernel mode after that.
+  printk("i have come to kernel mode. hello!");
   write_serial(a);
   //TODO: load r11, read rip, load it into rcx, sysret.
-  // save current in task_struct i
-   //SYSRET
-  /*
-   * loads RIP from RCX. we do not need these datas, because syscall is done every-time-called.
-   * and registers are each-hart specific.
-   * */
 }

@@ -32,6 +32,7 @@ global isr28
 global isr29
 global isr30
 global isr31
+global syscall
 
 ;  0: Divide By Zero Exception
 isr0:
@@ -255,6 +256,17 @@ isr31:
     push byte 31
     jmp isr_common_stub
 
+extern sys_stub
+
+syscall:
+    ; call sys_stub
+    call sys_stub
+    ; back
+    ; we cannot change these sh!t, even in kernel mode. we need to change them with a 'iret'
+    ; add qword [rsp], 1 ; as you can see, iret just go back to usermode and is a valid operation.
+    iretq
+
+
 
 ; We call a C function in here. We need to let the assembler know
 ; that '_fault_handler' exists in another file
@@ -269,9 +281,9 @@ isr_common_stub:
     push rcx
     push rdx
     push rbx
-    push rbp ; 0x101d50
+    push rbp
     push rsi
-    push rdi
+    push rdi ;; TODO r8 ~ r15. work later
 
     mov rax, rsp ; arg0 is the ret val. arg1.. in the stack!
     mov rdi, rsp ; rdi will be the very first argument..
