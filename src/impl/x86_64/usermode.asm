@@ -2,7 +2,7 @@
 ;       it is unknown if it works in protected mode.
 ;       using intel assembly style
 global jump_usermode
-extern user_test
+extern userInit
 jump_usermode:
 ;enable system call extensions that enables sysret and syscall
 	; enable syscall
@@ -16,7 +16,7 @@ jump_usermode:
     rdmsr
     mov edx, 0x00180008
     wrmsr
-	mov rcx, user_test ; to be loaded into RIP
+	mov rcx, userInit ; to be loaded into RIP
 	mov r11, 0x202 ; to be loaded into EFLAGS
 	;ret
 	;sysret ;use "o64 sysret" if you assemble with NASM

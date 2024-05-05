@@ -322,12 +322,12 @@ global irq13
 global irq14
 global irq15
 
+extern timer_stub
+
 ; 32: IRQ0
 irq0:
-    cli
-    push 0
-    push 32
-    jmp irq_common_stub
+    call timer_stub
+    iretq
 
 ; 33: IRQ1
 irq1:

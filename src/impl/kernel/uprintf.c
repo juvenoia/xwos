@@ -1,7 +1,7 @@
 #include <stdarg.h>
 #include "system.h"
 
-static char digits[] = "0123456789abcdef";
+char udigits[] = "0123456789abcdef";
 
 void uprintint(int xx, int base, int sign) {
   char buf[16];
@@ -12,7 +12,7 @@ void uprintint(int xx, int base, int sign) {
     x = xx;
   int i = 0;
   do {
-    buf[i ++] = digits[x % base];
+    buf[i ++] = udigits[x % base];
     x /= base;
   } while (x != 0);
   if (sign)
@@ -25,7 +25,7 @@ void uprintptr(uint64 x) {
   putc('0');
   putc('x');
   for (int i = 0; i < (sizeof (uint64)) * 8 / 4; i ++) {
-    putc(digits[x >> ((sizeof (uint64)) * 8 - 4)]);
+    putc(udigits[x >> ((sizeof (uint64)) * 8 - 4)]);
     x <<= 4;
   }
 }

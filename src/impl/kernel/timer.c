@@ -9,26 +9,6 @@
 *  has been running for */
 int timer_ticks = 0;
 
-/* Handles the timer. In this case, it's very simple: We
-*  increment the 'timer_ticks' variable every time the
-*  timer fires. By default, the timer fires 18.222 times
-*  per second. Why 18.222Hz? Some engineer at IBM must've
-*  been smoking something funky */
-void timer_handler(struct regs *r)
-{
-  /* Increment our 'tick count' */
-  timer_ticks++;
-  // uint64 rsp_v;
-  // __asm__ __volatile__ ("movq %%rsp, %0" : "=r" (rsp_v));
-  // printk("rsp: %p\n", rsp_v);
-  // printk("this is a timer handler, which is from cpl3\n");
-  /* Every 18 clocks (approximately 1 second), we will
-  *  display a message on the screen */
-  if (timer_ticks % 18 == 0) {
-    // todo: sched()
-  }
-}
-
 /* This will continuously loop until the given time has
 *  been reached */
 void timer_wait(int ticks)
@@ -54,6 +34,5 @@ void timer_install()
 {
   /* Installs 'timer_handler' to IRQ0 */
   timer_phase(100000);
-  irq_install_handler(0, timer_handler);
   //sti();
 }

@@ -1,7 +1,7 @@
 #include "system.h"
 
 // Prototypes for the functions that handle system calls.
-//extern uint64 sys_fork(void);
+extern uint64 sys_fork(void);
 //extern uint64 sys_exit(void);
 //extern uint64 sys_wait(void);
 //extern uint64 sys_pipe(void);
@@ -27,7 +27,7 @@ extern uint64 sys_putc(void);
 // An array mapping syscall numbers from syscall.h
 // to the function that handles the system call.
 static uint64 (*syscalls[])(void) = {
-//        [SYS_fork]    sys_fork,
+        [SYS_fork]    sys_fork,
 //        [SYS_exit]    sys_exit,
 //        [SYS_wait]    sys_wait,
 //        [SYS_pipe]    sys_pipe,
@@ -105,16 +105,10 @@ void sys_stub() {
   // only those in regs.
   // int c = task_struct[0].id; // current running process
   SAVE_ALL_CONTEXT(&task_struct[0].ctx);
-  int c = task_struct[0].id;
-  int i;
-  for (i = 1; i < NPROC; i ++) {
-    // find the current process.
-    if (task_struct[i].id == c)
-      break;
+  for (uint64 *va = task_struct[task_struct[0].id].knlStk - 5, i = 0; i < 5; i ++) {
+    task_struct[0].ctx.stk[i] = va[i];
   }
-  if (i == NPROC) {
-    // could not find such process. kernel stop.
-  }
+  task_struct[task_struct[0].id].ctx = task_struct[0].ctx;
   // find syscall number
   int cn;
   SAVE_CONTEXT(r9, cn);
@@ -125,9 +119,51 @@ void sys_stub() {
           :
           : "memory"
           );
-  uint64 rval = 0;
-  SAVE_CONTEXT(rax, rval);
-  LOAD_ALL_CONTEXT(&task_struct[0].ctx); // here you donot save rax, we carry the fkin return value.
-  LOAD_REG(rax, rval);
+  task_struct[0].ctx = task_struct[task_struct[0].id].ctx;
+  LOAD_ALL_CONTEXT(&(task_struct[0].ctx)); // load the original ctx.
   return; // now go to isrs.asm
+}
+
+int ticks = 0;
+
+void timer_stub() {
+  //a call 'timer_stub' will add rsp. we need to restore that.
+  //rsp
+  SAVE_ALL_CONTEXT(&task_struct[0].ctx);
+  uint64 *knlStk = task_struct[task_struct[0].id].knlStk;
+  for (uint64 *va = knlStk - 5, i = 0; i < 5; i ++) {
+    task_struct[0].ctx.stk[i] = va[i];
+  }
+  task_struct[task_struct[0].id].ctx = task_struct[0].ctx;
+  // you save current ctx in 0, and copy into corres.
+  ticks ++;
+  int done = 0;
+  if (ticks % 18 == 0) {
+    done = sched();
+    ticks = 0;
+  }
+  task_struct[0].ctx = task_struct[task_struct[0].id].ctx;
+  outportb(0x20, 0x20);
+  // change all that saved in stk..
+  // which knlStk should it be? should be the current running knlstk.
+  for (uint64 *va = knlStk - 5, i = 0; i < 5; i ++) {
+    va[i] = task_struct[task_struct[0].id].ctx.stk[i];
+  }
+  LOAD_ALL_CONTEXT(&(task_struct[0].ctx)); // load the original ctx.
+  return; // now go to isrs.asm/timer_stub(isrs0)
+}
+
+int sched() {
+  int done = 0;
+  for (int i = 1; i < NPROC; i ++) {
+    if (i != task_struct[0].id && task_struct[i].state == PROC_RUNNABLE) {
+      //task_struct[task_struct[0].id].state = PROC_RUNNABLE; // previous task paused
+      task_struct[0].id = i; // this indicates current running PROC.
+      task_struct[0].state = PROC_RUNNING; // change it to running, the ctx will be loaded later.
+      // swtchPgtbl(task_struct[i].pgtbl); // change pgtbl first you try donot change pgtbl
+      done = 1;
+      break;
+    }
+  }
+  return done;
 }

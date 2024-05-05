@@ -1,7 +1,7 @@
 #include <stdarg.h>
 #include "system.h"
 
-static char digits[] = "0123456789abcdef";
+char digits[] = "0123456789abcdef";
 
 void printint(int xx, int base, int sign) {
   char buf[16];

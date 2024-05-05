@@ -27,9 +27,6 @@ struct idt_ptr
 *  for which the 'presence' bit is cleared (0) will generate an
 *  "Unhandled Interrupt" exception */
 
-/* This exists in 'x86_64/idt.asm', and is used to load our IDT */
-extern void idt_load();
-
 /* Use this function to set an entry in the IDT. Alot simpler
 *  than twiddling with the GDT ;) */
 void idt_set_gate(uint8 num, uint64 base, uint16 sel, uint8 flags)
@@ -54,6 +51,9 @@ void idt_set_gate(uint8 num, uint64 base, uint16 sel, uint8 flags)
   idt[num].zero = 0;
 }
 
+void load_idt(struct idt_ptr *idtp) {
+  asm volatile ("lidt %0" : : "m" (*idtp));
+}
 /* Installs the IDT */
 void idt_install()
 {
@@ -67,5 +67,6 @@ void idt_install()
   /* Add any new ISRs to the IDT here using idt_set_gate */
 
   /* Points the processor's internal register to the new IDT */
-  idt_load();
+  // write this in __Asm__
+  load_idt(&idtp);
 }

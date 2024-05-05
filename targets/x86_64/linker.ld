@@ -2,7 +2,7 @@ ENTRY(start)
 
 SECTIONS
 {
-    . = 1M;
+    . = 0x7000000;
 
 	.boot :
 	{

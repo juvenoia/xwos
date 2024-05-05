@@ -65,8 +65,6 @@
 int putc(char c) {
   // 1. push your params in userstack
   uint64 arg0 = (uint64)c;
-  uint64 _rax;
-  SAVE_CONTEXT(rax, _rax);
   SAVE_REGS;
   LOAD_REG(rdi, arg0); // first param.
   LOAD_REG(r9, (uint64)SYS_putc);
@@ -77,9 +75,21 @@ int putc(char c) {
   // 4. load your return value?
   // isrs.asm' iret goes here.
   // rax carries the return value.
-  RESTORE_REGS;
   uint64 ret;
-  SAVE_CONTEXT(rax, ret); // you donot need change rax anymore.
+  SAVE_CONTEXT(r9, ret); // you donot need change rax anymore.
   // you pop your return address..
+  RESTORE_REGS;
   return ret;
+}
+
+int fork() {
+  SAVE_REGS;
+  LOAD_REG(r9, (uint64)SYS_fork);
+  TRAP;
+  uint64 ret;
+  SAVE_CONTEXT(r9, ret);
+  RESTORE_REGS;
+  uprintf("once?\n");
+  return ret;
+  // now, we step a backup sa
 }

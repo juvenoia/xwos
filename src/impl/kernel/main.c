@@ -1,20 +1,22 @@
 #include "system.h"
 
-void user_test() {
+void userInit() {
+  int p = fork();
   for (;; ) {
-    uprintf("i have done user-syscall stub.\n");
+    //uprintf("%d\n", p);
   }
 }
 
 
 void main() {
-  init_serial(); // todo: multi-hart printk
+  init_serial();
   cli();
   idt_install();
   isrs_install();
-  irq_install(); // todo: 现在的trapframe是否完全？
+  irq_install();
   timer_install();
-  sti();
   kinit();
+  procinit();
+  sti();
   jmpUsermode();
 }

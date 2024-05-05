@@ -6,10 +6,6 @@
 #ifndef __SYSTEM_H
 #define __SYSTEM_H
 
-enum {
-    SYS_PRINTF,
-};
-
 typedef unsigned char uint8;
 typedef unsigned short uint16;
 typedef unsigned int uint32;
@@ -71,21 +67,36 @@ extern void printk(char *fmt, ...);
 typedef struct {
     uint64 rax, rbx, rcx, rdx, rsi, rdi, rbp;
     uint64 r8, r9, r10, r11, r12, r13, r14, r15;
+    uint64 stk[5]; // though we dont need these, but we still store it.
 } ctx_t;
 
+enum {
+    PROC_UNUSED, PROC_RUNNING, PROC_WAITING, PROC_RUNNABLE,
+};
+
 typedef struct {
-    int id;
+    int id; // proc id
     ctx_t ctx;
     pagetable_t *pgtbl, *kpgtbl;
     uint64 *knlStk;
+    int state;
 }proc;
 
 #define NPROC 256 // currently only 256 tasks are allowed
 extern proc task_struct[];
+extern void procinit();
 
 /* USERMODE.C */
 extern void updateKernelStack(uint32);
 extern void jmpUsermode();
+
+/* MM.C */
+extern uint64 PGSIZE;
+extern uint64 PGROUNDDOWN(void *);
+extern uint64 PGROUNDUP(void *);
+extern uint64 allocPgtbl();
+extern void swtchPgtbl(uint64);
+extern int mappages(uint64 *, uint64, uint64);
 
 #define SYS_fork    1
 #define SYS_exit    2
@@ -110,7 +121,7 @@ extern void jmpUsermode();
 #define SYS_close  21
 #define SYS_putc   22
 
-//extern int fork(void);
+extern int fork(void);
 //extern int exit(int) __attribute__((noreturn));
 //extern int wait(int*);
 //extern int pipe(int*);

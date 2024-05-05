@@ -88,7 +88,7 @@ void write_tss(gdt_entry_bits *g) {
   memset(&tss_entry, 0, sizeof tss_entry);
 
   tss_entry.ss0 = 0x00000000;  // kernel high bit
-  tss_entry.esp0 = 0x00001000; // kernel low bit
+  tss_entry.esp0 = task_struct[1].knlStk; // kernel low bit
 }
 
 void updateKernelStack(uint32 addr) {
@@ -111,6 +111,5 @@ void jmpUsermode() {
 
   __asm__ ("lgdt %0" : : "m" (_gdtp) : "memory");
   flush_tss();
-
   usermode(); // the issue should be related to tss?
 }

@@ -95,7 +95,7 @@ void isrs_install()
 *  corresponds to each and every exception. We get the correct
 *  message by accessing like:
 *  exception_message[interrupt_number] */
-uint8 *exception_messages[] =
+uint64 *exception_messages[] =
         {
                 "Division By Zero",
                 "Debug",
