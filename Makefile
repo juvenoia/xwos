@@ -21,13 +21,19 @@ $(x86_64_asm_object_files): build/x86_64/%.o: src/impl/x86_64/%.asm
 	mkdir -p $(dir $@) && \
 	nasm -f elf64 $(patsubst build/x86_64/%.o, src/impl/x86_64/%.asm, $@) -o $@
 
-.PHONY: build-x86_64
+.PHONY: build-x86_64, user
 build-x86_64: $(x86_64_object_files) $(kernel_object_files)
 	mkdir -p dist/x86_64 && \
 	x86_64-elf-ld -n -o dist/x86_64/kernel.bin -T targets/x86_64/linker.ld $(kernel_object_files) $(x86_64_object_files) && \
 	cp dist/x86_64/kernel.bin targets/x86_64/iso/boot/kernel.bin && \
 	grub-mkrescue /usr/lib/grub/i386-pc -o dist/x86_64/kernel.iso targets/x86_64/iso
 clean:
-	rm ./targets/x86_64/iso/boot/kernel.bin && \
 	rm -rf ./build && \
-	rm -rf ./dist
+	rm -rf ./dist && \
+	rm ./targets/x86_64/iso/boot/kernel.bin
+user:
+	x86_64-elf-gcc -mcmodel=large -c -I src/intf -ffreestanding src/user/usys.S -o src/user/usys.o && \
+	x86_64-elf-gcc -mcmodel=large -c -I src/intf -ffreestanding src/user/uprintf.c -o src/user/uprintf.o
+	x86_64-elf-gcc -mcmodel=large -c -I src/intf -ffreestanding src/user/user.c -o src/user/user.o && \
+	x86_64-elf-ld -n -o fs.bin -T src/user/user.ld src/user/user.o src/user/usys.o src/user/uprintf.o
+

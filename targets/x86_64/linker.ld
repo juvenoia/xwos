@@ -13,6 +13,4 @@ SECTIONS
 	{
 		*(.text)
 	}
-
-	PROVIDE(end = .);
 }

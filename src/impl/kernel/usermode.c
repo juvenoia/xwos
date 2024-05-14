@@ -88,7 +88,7 @@ void write_tss(gdt_entry_bits *g) {
   memset(&tss_entry, 0, sizeof tss_entry);
 
   tss_entry.ss0 = 0x00000000;  // kernel high bit
-  tss_entry.esp0 = task_struct[1].knlStk; // kernel low bit
+  tss_entry.esp0 = task_struct[0].knlStk; // kernel low bit
 }
 
 void updateKernelStack(uint32 addr) {
@@ -103,11 +103,12 @@ void jmpUsermode() {
   gdt[3] = 0UL;                   // reserved
   gdt[4] = 0x00c0f20000000000UL;  // user data
   gdt[5] = 0x00a0f80000000000UL;  // user code //0x42 ie 66?
+  //gdt[4] = 0x00c0920000000000UL;  // user data
+  //gdt[5] = 0x00a0980000000000UL;  // user code //0x42 ie 66?
   write_tss(&gdt[6]);
   gdt[7] = 0x0000000000000000UL;
   _gdtp.size = 8 * 8 - 1; // with one
   _gdtp.addr = (uint64)&gdt[0];
-  cli(); // try to do sth with tss. 0x110 000 ; 6th?
 
   __asm__ ("lgdt %0" : : "m" (_gdtp) : "memory");
   flush_tss();

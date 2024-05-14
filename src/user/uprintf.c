@@ -1,5 +1,6 @@
 #include <stdarg.h>
 #include "system.h"
+#include "ulib.h"
 
 char udigits[] = "0123456789abcdef";
 

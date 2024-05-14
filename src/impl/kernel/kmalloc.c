@@ -18,9 +18,13 @@ void kinit() {
   struct run *r;
   int c = 0;
   for (uint64 va = PGROUNDUP(end); va < MAXVA; va += PGSIZE) {
-    uint64 *ptr = va;
-    *ptr = 2140;
-    if (*ptr == 2140)
+    int good = 1;
+    for (char *ptr = va; ptr < va + PGSIZE; ptr += 1) {
+      *ptr = 37;
+      if (*ptr != 37)
+        good = 0;
+    }
+    if (good)
       kfree(va);
     c ++;
   }
