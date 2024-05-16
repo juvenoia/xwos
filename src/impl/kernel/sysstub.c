@@ -68,7 +68,6 @@ static uint64 (*syscalls[])(void) = {
         SAVE_CONTEXT(rdx, (context)->rdx); \
         SAVE_CONTEXT(rsi, (context)->rsi); \
         SAVE_CONTEXT(rdi, (context)->rdi); \
-        SAVE_CONTEXT(rbp, (context)->rbp); \
         SAVE_CONTEXT(r8, (context)->r8); \
         SAVE_CONTEXT(r9, (context)->r9); \
         SAVE_CONTEXT(r10, (context)->r10); \
@@ -86,9 +85,7 @@ static uint64 (*syscalls[])(void) = {
     { \
         LOAD_REG(rbx, (context)->rbx); \
         LOAD_REG(rcx, (context)->rcx); \
-        LOAD_REG(rdx, (context)->rdx); \
         LOAD_REG(rsi, (context)->rsi); \
-        LOAD_REG(rdi, (context)->rdi); \
         LOAD_REG(r8, (context)->r8); \
         LOAD_REG(r9, (context)->r9); \
         LOAD_REG(r10, (context)->r10); \
@@ -97,6 +94,8 @@ static uint64 (*syscalls[])(void) = {
         LOAD_REG(r13, (context)->r13); \
         LOAD_REG(r14, (context)->r14); \
         LOAD_REG(r15, (context)->r15); \
+        LOAD_REG(rdx, (context)->rdx); \
+        LOAD_REG(rdi, (context)->rdi); \
         LOAD_REG(rax, (context)->rax); \
     }
 
@@ -108,18 +107,24 @@ void sys_stub() {
   for (uint64 *va = task_struct[task_struct[0].id].knlStk - 5, i = 0; i < 5; i ++) {
     task_struct[0].ctx.stk[i] = va[i];
   }
+  uint64 *rbp = task_struct[task_struct[0].id].knlStk - 6;
+  task_struct[0].ctx.rbp = *rbp; // real rbp is saved at knlStk[-6]
   task_struct[task_struct[0].id].ctx = task_struct[0].ctx;
   swtchPgtbl(task_struct[task_struct[0].id].kpgtbl); // change pgtbl to kernel, if you need to modify everything.
   // find syscall number
   // rdi, rsi, rdx, rcx, r8, r9
   syscalls[task_struct[0].ctx.r9]();
   swtchPgtbl(task_struct[task_struct[0].id].pgtbl); // change back.
+  *rbp = task_struct[task_struct[0].id].ctx.rbp;
   task_struct[0].ctx = task_struct[task_struct[0].id].ctx;
   for (uint64 *va = task_struct[task_struct[0].id].knlStk - 5, i = 0; i < 5; i ++) {
     va[i] = task_struct[0].ctx.stk[i];
   }
   LOAD_ALL_CONTEXT(&(task_struct[0].ctx)); // load the original ctx. load rax at last.
   return; // now go to isrs.asm
+  // e=0138
+  // 0000 0001 0011 1 000
+  // internal, GDT, 7 + 32 = 39. the last one?
 }
 
 int ticks = 0;
@@ -132,6 +137,8 @@ void timer_stub() {
   for (uint64 *va = task_struct[task_struct[0].id].knlStk - 5, i = 0; i < 5; i ++) {
     task_struct[0].ctx.stk[i] = va[i];
   }
+  uint64 *rbp = task_struct[task_struct[0].id].knlStk - 6;
+  task_struct[0].ctx.rbp = *rbp; // real rbp is saved at knlStk[-6]
   task_struct[task_struct[0].id].ctx = task_struct[0].ctx;
   swtchPgtbl(task_struct[task_struct[0].id].kpgtbl); // change pgtbl to kernel, if you need to modify everything.
   // you save current ctx in 0, and copy into corres.
@@ -142,28 +149,33 @@ void timer_stub() {
     done = sched();
     ticks = 0;
   }
-  // change all that saved in stk..
   // which knlStk should it be? should be the current running knlstk.
   outportb(0x20, 0x20);
   swtchPgtbl(task_struct[task_struct[0].id].pgtbl); // change back.
+  *rbp = task_struct[task_struct[0].id].ctx.rbp;
   task_struct[0].ctx = task_struct[task_struct[0].id].ctx;
+  // printk("%p\n", task_struct[0].ctx.stk[0]); //what caused the trouble?
+  // a stop at push rbp will cause the trouble. i donot have idea why now.
   for (uint64 *va = task_struct[p].knlStk - 5, i = 0; i < 5; i ++) {
     va[i] = task_struct[0].ctx.stk[i];
   }
+  // you should, restore rbp here, but not below.
   LOAD_ALL_CONTEXT(&(task_struct[0].ctx)); // load the original ctx.
   return; // now go to isrs.asm/timer_stub(isrs0)
 }
-// 0504 = 0000 0101 0000 0100 -> E = 0, 10 = LDT, 1010 0000 = 32 + 128 = 160. this is TSS?
+
+int swtchCnt = 0;
 
 int sched() {
   int done = 0;
   for (int i = 1; i < NPROC; i ++) {
     if (i != task_struct[0].id && task_struct[i].state == PROC_RUNNABLE) {
-      task_struct[task_struct[0].id].state = PROC_UNUSED; // previous task paused
+      task_struct[task_struct[0].id].state = PROC_RUNNABLE; // previous task paused
       task_struct[0].id = i; // this indicates current running PROC.
       task_struct[i].state = PROC_RUNNING; // change it to running, the ctx will be loaded later.
       updateKernelStack(task_struct[i].knlStk);
       done = 1;
+      swtchCnt ++;
       break;
     }
   }

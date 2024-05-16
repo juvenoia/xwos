@@ -1,12 +1,13 @@
 #include "ulib.h"
 
-char s[] = "test from putc\n";
-
 int main() {
-  uprintf("hello, world!\n");
-  for (int i = 0; i < 15; i ++) {
-    int p = putc(s[i]);
-    uprintf("%d\n", p);
+  int p = fork();
+  if (p == 0) {
+    for (;;)
+      uprintf("son\n");
+  } else {
+    for (;;)
+      uprintf("father\n"); // the question has been found. rbp should be 16 bit aligned.. but how to do this?
   }
-  for (;;) ;
+  // ok now bug caused by uprintf has been fixed. next we need to follow xv6 to make some syscall and user procs.
 }

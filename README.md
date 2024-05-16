@@ -13,15 +13,15 @@ idt, \
 intr & irq process, \
 8250 based printk, \
 kalloc & kfree, \
-syscall stub
-###  TODO:
+syscall stub, \
 k/upgtbl, \
 task_struct, \
-sched, \
+sched,
+###  TODO:
+syscalls: fork, etc.. \
 buffer, \
 inode, \
-fs, \
-TRAMPOLINE
+fs, 
 
 
 

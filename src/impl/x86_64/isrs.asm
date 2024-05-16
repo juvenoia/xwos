@@ -260,7 +260,9 @@ extern sys_stub
 
 syscall:
     ; call sys_stub
+    push rbp
     call sys_stub
+    pop rbp
     ; back
     ; we cannot change these sh!t, even in kernel mode. we need to change them with a 'iret'
     ; add qword [rsp], 1 ; as you can see, iret just go back to usermode and is a valid operation.
@@ -326,7 +328,9 @@ extern timer_stub
 
 ; 32: IRQ0
 irq0:
+    push rbp
     call timer_stub
+    pop rbp
     iretq
 
 ; 33: IRQ1

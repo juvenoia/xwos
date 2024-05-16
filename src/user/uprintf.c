@@ -32,6 +32,7 @@ void uprintptr(uint64 x) {
 }
 
 void uprintf(char *fmt, ...) {
+  // you should check out if rbp is 16 bit align. i assume this will
   va_list ap;
   if (fmt == 0) {
     uprintf("null pointer..\n");

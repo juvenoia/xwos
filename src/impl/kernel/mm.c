@@ -65,3 +65,11 @@ int mappages(uint64 *pgtbl, uint64 va, uint64 pa) {
   pgbase[(va >> shift[3]) & (511)] = pa | (0b111);
   return 1;
 }
+
+uint64 *fwalk(uint64 *pgtbl, uint64 va) {
+  uint64 *pgbase = walk(pgtbl, va, 0);
+  uint64 pte = pgbase[(va >> shift[3]) & (511)];
+  if (pte & 1)
+    return (pte >> 12) << 12;
+  return 0x8000000;
+}

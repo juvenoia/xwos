@@ -11,7 +11,7 @@ x86_64_object_files := $(x86_64_c_object_files) $(x86_64_asm_object_files)
 
 $(kernel_object_files): build/kernel/%.o: src/impl/kernel/%.c
 	mkdir -p $(dir $@) && \
-	x86_64-elf-gcc -mcmodel=large -c -I src/intf -ffreestanding $(patsubst build/kernel/%.o, src/impl/kernel/%.c, $@) -o $@
+	x86_64-elf-gcc -mno-sse -mcmodel=large -c -I src/intf -ffreestanding $(patsubst build/kernel/%.o, src/impl/kernel/%.c, $@) -o $@
 
 $(x86_64_c_object_files): build/x86_64/%.o: src/impl/x86_64/%.c
 	mkdir -p $(dir $@) && \
@@ -33,7 +33,7 @@ clean:
 	rm ./targets/x86_64/iso/boot/kernel.bin
 user:
 	x86_64-elf-gcc -mcmodel=large -c -I src/intf -ffreestanding src/user/usys.S -o src/user/usys.o && \
-	x86_64-elf-gcc -mcmodel=large -c -I src/intf -ffreestanding src/user/uprintf.c -o src/user/uprintf.o
+	x86_64-elf-gcc -mno-sse -mcmodel=large -c -I src/intf -ffreestanding src/user/uprintf.c -o src/user/uprintf.o
 	x86_64-elf-gcc -mcmodel=large -c -I src/intf -ffreestanding src/user/user.c -o src/user/user.o && \
 	x86_64-elf-ld -n -o fs.bin -T src/user/user.ld src/user/user.o src/user/usys.o src/user/uprintf.o
 
