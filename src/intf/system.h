@@ -100,4 +100,8 @@ extern uint64 kallocPgtbl();
 extern void swtchPgtbl(uint64);
 extern int mappages(uint64 *, uint64, uint64);
 
+/* DISK.C */
+extern void read_sectors(uint8 *, uint32, uint8, int);
+extern void write_sectors(uint8 *, uint32, uint8, int);
+
 #endif
