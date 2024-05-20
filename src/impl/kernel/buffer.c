@@ -4,6 +4,15 @@
 // a disk block is 1024B
 // idk why NBUF is associated with
 
+/*
+ * BUFFER LAYER
+ * Interface:
+ * bread(dev, blockno): allocate buf and read disk
+ * bwrite(buf): write it back to disk
+ * brelse(buf): release refcnt and nobody use it.
+ * since everyone is using the same buf, synchronization is since done.
+ * */
+
 struct {
     struct buf buf[NBUF];
     // a linkedlist for all buffers. head-node is invalid.

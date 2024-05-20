@@ -120,4 +120,55 @@ extern struct buf* bread(uint32 dev, uint32 blockno); // get a buf and read
 extern void bwrite(struct buf *b); // write a buf to disk
 extern void brelse(struct buf *b); // release a buf after usage
 
+/* FS.C */
+
+// block per bitmap = BSIZE * 8
+#define BPB BSIZE * 8
+// block b所对应的bitmap所在的磁盘块
+#define BBLOCK(b, sb) ((b) / BPB + sb.bmapstart)
+// inode 所在的磁盘块
+#define IBLOCK(i, sb) ((i) / IPB + sb.inodestart)
+// 每个 block的disk inode个数
+#define IPB (BSIZE / sizeof(struct dinode))
+// inode对应的文件block 表。
+#define NDIRECT 12
+#define NINDIRECT (BSIZE / sizeof(uint32))
+
+// in-memory copy of an inode
+struct inode {
+    uint32 dev;           // Device number
+    uint32 inum;          // Inode number
+    int ref;            // Reference count
+    int valid;          // inode has been read from disk?
+
+    uint16 type;         // copy of disk inode
+    uint16 major;
+    uint16 minor;
+    uint16 nlink;
+    uint32 size;
+    uint32 addrs[NDIRECT+1];
+};
+
+// On-disk inode structure
+struct dinode {
+    uint16 type;           // File type
+    uint16 major;          // Major device number (T_DEVICE only)
+    uint16 minor;          // Minor device number (T_DEVICE only)
+    uint16 nlink;          // Number of links to inode in file system
+    uint32 size;            // Size of file (bytes)
+    uint32 addrs[NDIRECT+1];   // Data block addresses
+};
+
+#define T_DIR     1   // Directory
+#define T_FILE    2   // File
+#define T_DEVICE  3   // Device
+
+struct stat {
+    int dev;     // File system's disk device
+    uint32 ino;    // Inode number
+    short type;  // Type of file
+    short nlink; // Number of links to file
+    uint64 size; // Size of file in bytes
+};
+
 #endif

@@ -1,5 +1,7 @@
 #include "system.h"
 
+#define MAXVA 0x8000000
+
 uint64 PGSIZE = 0x1000;
 
 #define VA2IDX(x) (((uint64) x) / (PGSIZE))
@@ -68,8 +70,45 @@ int mappages(uint64 *pgtbl, uint64 va, uint64 pa) {
 
 uint64 *fwalk(uint64 *pgtbl, uint64 va) {
   uint64 *pgbase = walk(pgtbl, va, 0);
+  if (pgbase == 0x8000000)
+    return 0x8000000;
   uint64 pte = pgbase[(va >> shift[3]) & (511)];
   if (pte & 1)
     return (pte >> 12) << 12;
   return 0x8000000;
+}
+
+int either_copyout(int user_dst, uint64 dst, void *src, uint64 len) {
+  if (user_dst) {
+    int pid = task_struct[0].id;
+    return copyout(task_struct[pid].pgtbl, dst, src, len);
+  } else {
+    memcpy((uint8 *)dst, src, len);
+    return 0;
+  }
+}
+
+// Copy from kernel to user.
+// Copy len bytes from src to virtual address dstva in a given page table.
+// Return 0 on success, -1 on error.
+int
+copyout(pagetable_t pagetable, uint64 dstva, char *src, uint64 len)
+{
+  while(len > 0){
+    uint64 va = PGROUNDDOWN(dstva);
+    if(va >= MAXVA)
+      return -1;
+    uint64 pa = fwalk(pagetable, va);
+    if (pa == 0x8000000) // such pte does not exist in user's pgtbl
+      return -1;
+    int n = PGSIZE - (dstva - va);
+    if(n > len)
+      n = len;
+    memcpy((void *)(pa + (dstva - va)), src, n);
+
+    len -= n;
+    src += n;
+    dstva = va + PGSIZE;
+  }
+  return 0;
 }
