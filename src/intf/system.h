@@ -43,11 +43,10 @@ extern void isrs_install();
 extern void irq_install_handler(int irq, void (*handler)(struct regs *r));
 extern void irq_uninstall_handler(int irq);
 extern void irq_install();
-//
+
 /* TIMER.C */
 extern void timer_wait(int ticks);
 extern void timer_install();
-//
 
 /* KMALLOC.C */
 typedef uint64 pagetable_t;
@@ -101,7 +100,24 @@ extern void swtchPgtbl(uint64);
 extern int mappages(uint64 *, uint64, uint64);
 
 /* DISK.C */
-extern void read_sectors(uint8 *, uint32, uint8, int);
-extern void write_sectors(uint8 *, uint32, uint8, int);
+extern void read_sectors(uint8 *buffer, uint32 sector, uint8 count, int is_master);
+extern void write_sectors(uint8 *buffer, uint32 sector, uint8 count, int is_master);
+
+/* BUFFER.C */
+#define BSIZE 512
+struct buf {
+    int valid;
+    int disk;
+    uint32 dev;
+    uint32 blockno;
+    uint32 refcnt;
+    struct buf *prev;
+    struct buf *next;
+    uint8 data[BSIZE];
+};
+extern void binit();
+extern struct buf* bread(uint32 dev, uint32 blockno); // get a buf and read
+extern void bwrite(struct buf *b); // write a buf to disk
+extern void brelse(struct buf *b); // release a buf after usage
 
 #endif
