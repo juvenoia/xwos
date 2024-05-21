@@ -31,6 +31,8 @@ extern void outportb (unsigned short _port, unsigned char _data);
 extern void sti();
 extern void cli();
 extern void usermode();
+extern int strncmp(const char *p, const char *q, uint32 n);
+extern char* strncpy(char *s, const char *t, int n);
 
 /* IDT.C */
 extern void idt_set_gate(unsigned char num, unsigned long long base, unsigned short sel, unsigned char flags);
@@ -74,17 +76,26 @@ enum {
     PROC_UNUSED, PROC_RUNNING, PROC_WAITING, PROC_RUNNABLE,
 };
 
+#define NOFILE       16  // open files per process
+
 typedef struct {
     int id; // proc id
     ctx_t ctx;
     pagetable_t *pgtbl, *kpgtbl;
     uint64 *knlStk;
     int state;
+    struct inode* cwd;
+    int killed;
+    void *chan; // use for wait and sleep
+    struct file *ofile[NOFILE];  // Open files
 }proc;
 
 #define NPROC 256 // currently only 256 tasks are allowed
 extern proc task_struct[];
 extern void procinit();
+extern int killed(proc *pr);
+extern void wakeup(void *chan);
+extern void sleep(void *chan);
 
 /* USERMODE.C */
 extern void updateKernelStack(uint32);
@@ -98,6 +109,11 @@ extern uint64 allocPgtbl();
 extern uint64 kallocPgtbl();
 extern void swtchPgtbl(uint64);
 extern int mappages(uint64 *, uint64, uint64);
+extern int either_copyout(int user_dst, uint64 dst, void *src, uint64 len);
+extern int either_copyin(void *dst, int user_src, uint64 src, uint64 len);
+extern int copyout(pagetable_t pagetable, uint64 dstva, char *src, uint64 len);
+extern int copyin(pagetable_t pagetable, char *dst, uint64 srcva, uint64 len);
+
 
 /* DISK.C */
 extern void read_sectors(uint8 *buffer, uint32 sector, uint8 count, int is_master);
@@ -133,6 +149,7 @@ extern void brelse(struct buf *b); // release a buf after usage
 // inode对应的文件block 表。
 #define NDIRECT 12
 #define NINDIRECT (BSIZE / sizeof(uint32))
+#define MAXFILE (NDIRECT + NINDIRECT)
 
 // in-memory copy of an inode
 struct inode {
@@ -170,5 +187,42 @@ struct stat {
     short nlink; // Number of links to file
     uint64 size; // Size of file in bytes
 };
+
+// Directory is a file containing a sequence of dirent structures.
+#define DIRSIZ 14
+
+#define ROOTINO 1   // root i-number
+#define ROOTDEV 1
+
+extern int readi(struct inode *ip, int user_dst, uint64 dst, uint32 off, uint32 n);
+extern int writei(struct inode *ip, int user_src, uint64 src, uint32 off, uint32 n);
+/* FILE.C */
+#define NDEV         10  // maximum major device number
+#define NFILE       100  // open files per system
+// map major device number to device functions.
+struct devsw {
+    int (*read)(int, uint64, int);
+    int (*write)(int, uint64, int);
+};
+
+struct file {
+    enum { FD_NONE, FD_PIPE, FD_INODE, FD_DEVICE } type;
+    int ref; // reference count
+    char readable;
+    char writable;
+    struct pipe *pipe; // FD_PIPE
+    struct inode *ip;  // FD_INODE and FD_DEVICE
+    uint32 off;          // FD_INODE
+    short major;       // FD_DEVICE
+};
+
+extern void fileclose(struct file *f);
+extern struct file* filedup(struct file *f);
+extern int fileread(struct file *f, uint64 addr, int n);
+extern int filewrite(struct file *f, uint64 addr, int n);
+/* PIPE.C */
+extern void pipeclose(struct pipe *pi, int writable);
+extern int pipewrite(struct pipe *pi, uint64 addr, int n);
+extern int piperead(struct pipe *pi, uint64 addr, int n);
 
 #endif

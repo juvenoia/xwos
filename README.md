@@ -18,10 +18,8 @@ k/upgtbl, \
 task_struct, \
 sched,
 ###  TODO:
-syscalls: fork, etc.. \
-buffer, \
-inode, \
-fs, 
+wakeup & sleep (i.e. sched), \
+adding fs syscall, \
 
 
 

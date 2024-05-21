@@ -91,9 +91,7 @@ int either_copyout(int user_dst, uint64 dst, void *src, uint64 len) {
 // Copy from kernel to user.
 // Copy len bytes from src to virtual address dstva in a given page table.
 // Return 0 on success, -1 on error.
-int
-copyout(pagetable_t pagetable, uint64 dstva, char *src, uint64 len)
-{
+int copyout(pagetable_t pagetable, uint64 dstva, char *src, uint64 len) {
   while(len > 0){
     uint64 va = PGROUNDDOWN(dstva);
     if(va >= MAXVA)
@@ -101,14 +99,43 @@ copyout(pagetable_t pagetable, uint64 dstva, char *src, uint64 len)
     uint64 pa = fwalk(pagetable, va);
     if (pa == 0x8000000) // such pte does not exist in user's pgtbl
       return -1;
-    int n = PGSIZE - (dstva - va);
+    uint64 n = PGSIZE - (dstva - va);
     if(n > len)
       n = len;
     memcpy((void *)(pa + (dstva - va)), src, n);
-
     len -= n;
     src += n;
     dstva = va + PGSIZE;
   }
   return 0;
+}
+
+// Copy from user to kernel.
+// Copy len bytes to dst from virtual address srcva in a given page table.
+// Return 0 on success, -1 on error.
+int copyin(pagetable_t pagetable, char *dst, uint64 srcva, uint64 len) {
+  while(len > 0){
+    uint64 va = PGROUNDDOWN(srcva);
+    uint64 pa = fwalk(pagetable, va);
+    if(pa == 0x8000000)
+      return -1;
+    uint64 n = PGSIZE - (srcva - va);
+    if(n > len)
+      n = len;
+    memcpy(dst, (void *)(pa + (srcva - va)), n);
+    len -= n;
+    dst += n;
+    srcva = va + PGSIZE;
+  }
+  return 0;
+}
+
+int either_copyin(void *dst, int user_src, uint64 src, uint64 len) {
+  if (user_src) {
+    int pid = task_struct[0].id;
+    return copyin(task_struct[pid].pgtbl, dst, src, len);
+  } else {
+    memcpy(dst, (char *)src, len);
+    return 0;
+  }
 }

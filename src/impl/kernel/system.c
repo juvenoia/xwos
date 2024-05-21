@@ -29,6 +29,26 @@ size_t strlen(const char *str)
   return retval;
 }
 
+int strncmp(const char *p, const char *q, uint32 n)
+{
+  while(n > 0 && *p && *p == *q)
+    n--, p++, q++;
+  if(n == 0)
+    return 0;
+  return (uint8)*p - (uint8)*q;
+}
+
+char* strncpy(char *s, const char *t, int n)
+{
+  char *os;
+  os = s;
+  while(n-- > 0 && (*s++ = *t++) != 0)
+    ;
+  while(n-- > 0)
+    *s++ = 0;
+  return os;
+}
+
 uint8 inportb (uint16 _port)
 {
   uint8 rv;

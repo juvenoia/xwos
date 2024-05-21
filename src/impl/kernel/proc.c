@@ -87,3 +87,7 @@ uint64 sys_fork() {
   task_struct[p].state = PROC_RUNNABLE;
   return 0;
 }
+
+int killed(proc *pr) {
+  return pr->killed;
+}

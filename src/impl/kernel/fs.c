@@ -273,13 +273,13 @@ void stati(struct inode *ip, struct stat *st) {
 int readi(struct inode *ip, int user_dst, uint64 dst, uint32 off, uint32 n) {
   uint32 tot = 0;
   if (off > ip->size || off + n < off) {
-    // this indicates an invalid bound or a back param n
+    // this indicates an invalid bound or a negative param n
     return 0;
   }
   if (off + n > ip->size) {
     n = ip->size - off;
   }
-  for (uint32 m = 0; tot < n; tot += m, off += m, dst += m) {
+  for (uint64 m = 0; tot < n; tot += m, off += m, dst += m) {
     uint32 addr = bmap(ip, off / BSIZE); // offset byte -> offset-th BLK, at which ip->dev blk?
     if (addr == 0)
       break;
@@ -300,5 +300,166 @@ int readi(struct inode *ip, int user_dst, uint64 dst, uint32 off, uint32 n) {
  * user_src=1 indicates a user pgtbl; 0 for kernel space.
  * */
 int writei(struct inode *ip, int user_src, uint64 src, uint32 off, uint32 n) {
+  if (off > ip->size || off + n < off)
+    return -1;
+  if (off + n > MAXFILE * BSIZE) // bigger than our fs could stand
+    return -1;
+  uint32 tot = 0;
+  for (uint64 m = 0; tot < n; tot += m, off += m, src += m) {
+    uint32 addr = bmap(ip, off / BSIZE); // blk number
+    if (addr == 0)
+      break;
+    struct buf *bp = bread(ip->dev, addr);
+    m = min(n - tot, BSIZE - off % BSIZE);
+    if (either_copyin(bp->data + (off % BSIZE), user_src, src, m) == -1) {
+      brelse(bp);
+      break;
+    }
+    bwrite(bp);
+    brelse(bp);
+  }
+  if (off > ip->size)
+    ip->size = off;
+  iupdate(ip);
+  return tot;
+}
 
+// < --- DIRECTORIES --- >
+int namecmp(const char *s, const char *t) {
+  return strncmp(s, t, DIRSIZ);
+}
+
+struct dirent {
+    uint16 inum;
+    char name[DIRSIZ];
+};
+
+/*
+ * lookup files in given dir inode
+ * dir inode contains many dirent struct
+ * */
+struct inode* dirloopup(struct inode *dp, char *name, uint64 *poff) {
+  if (dp->type != T_DIR) {
+    printk("dirlookup not DIR");
+    for (;;) ;
+  }
+  struct dirent de;
+  for (uint32 off = 0; off < dp->size; off += sizeof (de)) {
+    if (readi(dp, 0, (uint64)&de, off, sizeof(de)) != sizeof (de)) {
+      printk("dirlook readi");
+      for (;;) ;
+    }
+    if (de.inum == 0)
+      continue; // this stub is empty or deleted
+    if (namecmp(name, de.name) == 0) {
+      if (poff)
+        *poff = off;
+      return iget(dp->dev, de.inum);
+    }
+  }
+  return 0;
+}
+
+int dirlink(struct inode *dp, char *name, uint32 inum) {
+  struct inode *ip;
+  if ((ip = dirloopup(dp, name, 0)) != 0) {
+    // found this name. you should not mkdir this twice
+    iput(ip);
+    return -1;
+  }
+  int off;
+  struct dirent de;
+  for (off = 0; off < dp->size; off += sizeof (de)) {
+    if (readi(dp, 0, (uint64) &de, off, sizeof (de)) != sizeof (de)) {
+      printk("dirlink read");
+      for (;;) ;
+    }
+    if (de.inum == 0)
+      break;
+  }
+  // found an empty dir content stub
+  strncpy(de.name, name, DIRSIZ);
+  de.inum = inum;
+  // write this inode back
+  if (writei(dp, 0, (uint64)&de, off, sizeof(de)) != sizeof (de))
+    return -1;
+  return 0;
+}
+
+// < --- Paths --- >
+
+/*
+ * return next level char,
+ * name-> return current dir name
+ * Examples:
+ * skipelem("a/bb/c", name) = "bb/c", name = a
+ * */
+char* skipelem(char *path, char *name) {
+  while (*path == '/')
+    path ++;
+  if (*path == 0)
+    return 0; // '\0' indiacates an end
+  char *s = path;
+  while (*path != '/' && *path != 0)
+    path ++;
+  uint32 len = path - s;
+  if (len >= DIRSIZ)
+    memcpy(name, s, DIRSIZ);
+  else {
+    memcpy(name, s, len);
+    name[len] = 0;
+  }
+  while (*path == '/')
+    path ++;
+  return path;
+}
+
+struct inode *idup(struct inode *ip) {
+  ip->ref ++;
+  return ip;
+}
+
+struct inode* namex(char *path, int nameiparent, char *name) {
+  struct inode *ip, *next;
+  if (*path == '/')
+    ip = iget(ROOTDEV, ROOTINO);
+  else
+    ip = idup(task_struct[task_struct[0].id].cwd);
+
+  while ((path = skipelem(path, name)) != 0) {
+    iread(ip); // read current ip
+    if (ip->type != T_DIR) {
+      iput(ip);
+      return 0; // not a DIR. stop
+    }
+    if (nameiparent && *path == '\0') {
+      // early stop. ip from parent
+      iput(ip);
+      return ip;
+      // examples:
+      // b/c: path=c, name=b.
+      // c: path='', name=c.
+    }
+    if ((next = dirloopup(ip, name, 0)) == 0) {
+      iput(ip); // next dir donot exist
+      return 0;
+    }
+    iput(ip);
+    ip = next;
+  }
+  if (nameiparent) {
+    // you come here only when you do not have ny parent
+    iput(ip);
+    return 0;
+  }
+  return ip;
+}
+
+struct inode* namei(char *path) {
+  char name[DIRSIZ];
+  return namex(path, 0, name);
+}
+
+struct inode* nameiparent(char *path, char *name) {
+  return namex(path, 1, name);
 }
